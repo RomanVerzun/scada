@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body> 
+    <p>New File</p>
+    <svg width="1920" height="800" version="1.1" viewBox="0 0 1920 800" xmlns="http://www.w3.org/2000/svg">
+     <g stroke="#3485fd" stroke-width="5">
+      <rect id="rect1" x="271.88" y="129.47" width="100" height="200" fill="#fd933a"/>
+      <rect id="rect2" x="712.43" y="162.59" width="100" height="200" fill="#228c3a"/>
+      <rect id="rect3" x="121.49" y="238.62" width="100" height="200" fill="#17a2b8"/>
+     </g>
+    </svg>
+    <button id="toggleMove">Enable Move Mode</button>
+    <script type="text/javascript" src="qrc:///qtwebchannel/qwebchannel.js"></script>
+
+    <script type="text/javascript">
+        window.onload = function() {
+            new QWebChannel(qt.webChannelTransport, function(channel) {
+                var bridge = channel.objects.bridge;
+                document.getElementById('rect1').addEventListener('click', function() {
+                    bridge.handleValue(1);
+                });
+
+                document.getElementById('rect2').addEventListener('click', function() {
+                    bridge.handleValue(2);
+                });
+
+                document.getElementById('rect3').addEventListener('click', function() {
+                    bridge.handleValue(3);
+                });
+            });
+        };
+        document.querySelectorAll('rect').forEach(function(rect) {
+            rect.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+
+            var selectedElement = false;
+            var offset = { x: 0, y: 0 };
+            var moveEnabled = false;
+
+            function startDrag(evt) {
+                if (moveEnabled) {
+                    selectedElement = evt.target;
+                    offset = getMousePosition(evt);
+                    offset.x = evt.clientX - (selectedElement.getAttributeNS(null, "x"));
+                    offset.y = evt.clientY - (selectedElement.getAttributeNS(null, "y"));
+                }
+            }
+
+            function drag(evt) {
+                if(selectedElement && moveEnabled) {
+                    var coord = getMousePosition(evt);
+                    selectedElement.setAttributeNS(null, "x", evt.clientX - offset.x);
+                    selectedElement.setAttributeNS(null, "y", evt.clientY - offset.y);
+                }
+            }
+
+            function endDrag(evt) {
+                selectedElement = null;
+            }
+
+            function getMousePosition(evt) {
+                var CTM = rect.getScreenCTM();
+                var svgPoint = rect.ownerSVGElement.createSVGPoint();
+                svgPoint.x = evt.clientX;
+                svgPoint.y = evt.clientY;
+                var cursorPoint = svgPoint.matrixTransform(CTM.inverse());
+                return {
+                    x: cursorPoint.x,
+                    y: cursorPoint.y
+                };
+            }
+
+            document.getElementById('toggleMove').addEventListener('click', function() {
+                moveEnabled = !moveEnabled;
+                this.textContent = moveEnabled ? 'Disable Move Mode' : 'Enable Move mode';
+            });
+        });
+    </script>
+
+</body>
+</html>
